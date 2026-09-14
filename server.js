@@ -11,14 +11,14 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// TAMANHO DO CAMPO AMPLIADO (Estilo mapa Huge do HaxBall)
+// TAMANHO DO CAMPO AMPLIADO (Mapa Huge do HaxBall)
 const CANVAS_WIDTH = 1600;
-const CANVAS_HEIGHT = 1000;
+const CANVAS_HEIGHT = 1000; // Altura corrigida
 
-const FIELD_MARGIN = 100; // Margem maior nas laterais
-const GOAL_WIDTH = 60;   // Traves mais profundas
+const FIELD_MARGIN = 100; 
+const GOAL_WIDTH = 60;   
 
-// GOL BEM MAIOR: Agora a trave ocupa 30% da altura total do campo
+// GOL AMPLIADO
 const GOAL_TOP = (CANVAS_HEIGHT / 2) - 150;     // Altura 350
 const GOAL_BOTTOM = (CANVAS_HEIGHT / 2) + 150;  // Altura 650
 
@@ -33,7 +33,7 @@ function createRoomState(durationMinutes, hostId) {
         matchActive: false,
         players: {},
         score: { red: 0, blue: 0 },
-        ball: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, vx: 0, vy: 0, radius: 12, friction: 0.985 }, // Bola ligeiramente maior e mais solta
+        ball: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, vx: 0, vy: 0, radius: 12, friction: 0.985 },
         timeLeft: durationMinutes * 60,
         gameOver: false,
         winner: null,
@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
         room.players[socket.id] = {
             id: socket.id, name: name, team: team,
             color: team === 'red' ? '#ff4d4d' : '#4da6ff',
-            radius: 18, speed: 4.5, // Jogador ligeiramente maior para o campo gigante
+            radius: 18, speed: 4.5,
             x: team === 'red' ? CANVAS_WIDTH / 4 + FIELD_MARGIN : (CANVAS_WIDTH / 4) * 3 - FIELD_MARGIN,
             y: CANVAS_HEIGHT / 2,
             isAdmin: socket.id === room.adminId,
@@ -170,7 +170,7 @@ setInterval(() => {
 
             if (distance < minDist) {
                 let nx = dx / distance; let ny = dy / distance;
-                let pushForce = p.input.kick ? 13.5 : 3.5; // Chute forte ajustado para o mapa grande
+                let pushForce = p.input.kick ? 13.5 : 3.5;
                 room.ball.vx = nx * pushForce; room.ball.vy = ny * pushForce;
                 let overlap = minDist - distance; room.ball.x += nx * overlap; room.ball.y += ny * overlap;
             }
@@ -180,8 +180,10 @@ setInterval(() => {
         room.ball.x += room.ball.vx; room.ball.y += room.ball.vy;
         room.ball.vx *= room.ball.friction; room.ball.vy *= room.ball.friction;
 
+        // Teto (y = 0)
         if (room.ball.y - room.ball.radius < 0) { room.ball.y = room.ball.radius; room.ball.vy *= -0.8; }
-        if (room.ball.y + room.ball.radius > CANVAS_HEIGHT) { room.ball.y = room.ball.radius; room.ball.vy *= -0.8; }
+        // Chão (y = 1000) - CORRIGIDO (Fim do teletransporte)
+        if (room.ball.y + room.ball.radius > CANVAS_HEIGHT) { room.ball.y = CANVAS_HEIGHT - room.ball.radius; room.ball.vy *= -0.8; }
 
         // Gol Esquerdo
         if (room.ball.x - room.ball.radius < FIELD_MARGIN) {
