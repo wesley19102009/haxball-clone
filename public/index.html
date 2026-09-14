@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HaxBall Clone Multiplayer</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 1. TELA DO MENU INICIAL -->
+    <div id="menu-container">
+        <h1>HAXBALL CLONE</h1>
+        <div class="form-group">
+            <label for="nickname">Seu Apelido:</label>
+            <input type="text" id="nickname" placeholder="Digite seu nick..." maxlength="12">
+        </div>
+        <div class="form-group">
+            <label>Escolha seu Time Inicial:</label>
+            <div class="team-buttons">
+                <button type="button" id="btn-red" class="team-btn active">🔴 Vermelho</button>
+                <button type="button" id="btn-blue" class="team-btn">🔵 Azul</button>
+            </div>
+        </div>
+        <hr style="border: 1px solid #444; margin: 20px 0;">
+        <div class="room-section">
+            <div class="tab-buttons">
+                <button type="button" id="tab-create" class="tab-btn active">Criar Sala</button>
+                <button type="button" id="tab-join" class="tab-btn">Entrar em Sala</button>
+            </div>
+            <div id="panel-create" class="room-panel">
+                <div class="form-group">
+                    <label for="create-room-id">Nome/ID da Sala:</label>
+                    <input type="text" id="create-room-id" placeholder="Ex: sala123">
+                </div>
+                <div class="form-group">
+                    <label for="create-room-pass">Senha da Sala:</label>
+                    <input type="password" id="create-room-pass" placeholder="Senha opcional...">
+                </div>
+                <div class="form-group">
+                    <label for="match-time">Tempo de Partida:</label>
+                    <select id="match-time">
+                        <option value="3">3 Minutos</option>
+                        <option value="5" selected>5 Minutos</option>
+                        <option value="7">7 Minutos</option>
+                        <option value="10">10 Minutos</option>
+                    </select>
+                </div>
+            </div>
+            <div id="panel-join" class="room-panel hidden">
+                <div class="form-group">
+                    <label for="join-room-id">Nome/ID da Sala:</label>
+                    <input type="text" id="join-room-id" placeholder="Digite o ID da sala...">
+                </div>
+                <div class="form-group">
+                    <label for="join-room-pass">Senha da Sala:</label>
+                    <input type="password" id="join-room-pass" placeholder="Digite a senha...">
+                </div>
+            </div>
+        </div>
+        <button id="btn-play">Entrar na Sala</button>
+    </div>
+
+    <!-- 2. TELA DO LOBBY DE ESPERA -->
+    <div id="lobby-container" class="hidden">
+        <h2 id="lobby-title">Sala: Nome da Sala</h2>
+        <div class="lobby-content">
+            <div class="lobby-lists">
+                <div class="team-list">
+                    <h3>🔴 Time Vermelho</h3>
+                    <ul id="list-red"></ul>
+                </div>
+                <div class="team-list">
+                    <h3>🔵 Time Azul</h3>
+                    <ul id="list-blue"></ul>
+                </div>
+            </div>
+            <div class="chat-container">
+                <div id="chat-messages"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Digite uma mensagem..." maxlength="60">
+                    <button id="btn-send-chat">Enviar</button>
+                </div>
+            </div>
+        </div>
+        <div class="lobby-controls">
+            <button id="btn-start-match" class="hidden">🚀 Começar Partida (Apenas Admin)</button>
+            <p id="wait-message">Aguardando o Host iniciar a partida...</p>
+        </div>
+    </div>
+
+    <!-- 3. TELA DO JOGO EM SI -->
+    <div id="game-container" class="hidden">
+        <div id="header-bar">
+            <div id="scoreboard">🔴 Red 0 - 0 Blue 🔵</div>
+            <div id="timer">⏱️ 05:00</div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
