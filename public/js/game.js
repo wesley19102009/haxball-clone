@@ -25,7 +25,6 @@ const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const btnSendChat = document.getElementById('btn-send-chat');
 
-// Conexão dinâmica e segura com o servidor online do Render
 const socket = io(window.location.origin);
 let clientPlayers = {};
 let clientBall = { x: 800, y: 500, radius: 12 };
@@ -36,7 +35,6 @@ let overlayText = "";
 let selectedTeam = 'red';
 let currentMode = 'create';
 
-// Configurações do tamanho real do mapa gigante
 const WORLD_WIDTH = 1600;
 const WORLD_HEIGHT = 1000;
 const FIELD_MARGIN = 100; 
@@ -44,13 +42,12 @@ const GOAL_WIDTH = 60;
 const GOAL_TOP = WORLD_HEIGHT / 2 - 150; 
 const GOAL_BOTTOM = WORLD_HEIGHT / 2 + 150;
 
-// Controle de posição da câmera
 let camera = { x: 0, y: 0 };
 
 const inputState = { up: false, down: false, left: false, right: false, kick: false };
 
 tabCreate.addEventListener('click', () => { currentMode = 'create'; tabCreate.classList.add('active'); tabJoin.classList.remove('active'); panelCreate.classList.remove('hidden'); panelJoin.classList.add('hidden'); });
-tabJoin.addEventListener('click', () => { currentMode = 'join'; tabJoin.classList.add('active'); tabCreate.classList.remove('active'); panelJoin.classList.remove('hidden'); panelCreate.classList.add('hidden'); });
+tabJoin.addEventListener('click', () => { currentMode = 'join'; tabJoin.classList.add('active'); tabCreate.classList.remove('active'); panelJoin.classList.remove('hidden'); panelJoin.classList.add('hidden'); });
 btnRed.addEventListener('click', () => { selectedTeam = 'red'; btnRed.classList.add('active'); btnBlue.classList.remove('active'); });
 btnBlue.addEventListener('click', () => { selectedTeam = 'blue'; btnBlue.classList.add('active'); btnRed.classList.remove('active'); });
 
@@ -100,7 +97,6 @@ socket.on('gameState', (data) => {
     if (data.score) scoreboard.innerHTML = `🔴 Red ${data.score.red} - ${data.score.blue} Blue 🔵`;
     if (data.timeString) timerDisplay.innerHTML = `⏱️ ${data.timeString}`;
     
-    // Foco da câmera no jogador local
     let myPlayer = clientPlayers[socket.id];
     if (myPlayer) {
         camera.x = myPlayer.x - canvas.width / 2;
@@ -110,7 +106,6 @@ socket.on('gameState', (data) => {
         camera.y = clientBall.y - canvas.height / 2;
     }
 
-    // Trava os limites da câmera dentro do estádio
     if (camera.x < 0) camera.x = 0;
     if (camera.y < 0) camera.y = 0;
     if (camera.x > WORLD_WIDTH - canvas.width) camera.x = WORLD_WIDTH - canvas.width;
@@ -167,12 +162,7 @@ function drawField() {
     
     ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#000000"; ctx.lineWidth = 2;
     const posts = [{x: FIELD_MARGIN, y: GOAL_TOP}, {x: FIELD_MARGIN, y: GOAL_BOTTOM}, {x: WORLD_WIDTH - FIELD_MARGIN, y: GOAL_TOP}, {x: WORLD_WIDTH - FIELD_MARGIN, y: GOAL_BOTTOM}];
-    posts.forEach(post => { 
-        ctx.beginPath(); 
-        ctx.arc(post.x, post.y, 8, 0, Math.PI * 2); 
-        ctx.fill(); 
-        ctx.stroke(); // Corrigido aqui perfeitamente
-    });
+    posts.forEach(post => { ctx.beginPath(); ctx.arc(post.x, post.y, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
 }
 
 function drawPlayers() {
@@ -196,6 +186,10 @@ function drawStaticOverlays() {
         ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffea00"; ctx.font = "bold 60px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("¡¡¡ GOOOL !!!", canvas.width / 2, canvas.height / 2);
+    }
+    if (gameOverOverlay) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff3333"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         if (gameOverOverlay) {
             ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -213,7 +207,10 @@ function gameLoop() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    ctx.translate(-camera.x, -camera.y);
+    
+    // CORREÇÃO: Aplica zoom out de 0.75 para dar mais visão e afastar a câmera
+    ctx.scale(0.75, 0.75);
+    ctx.translate(-camera.x + (canvas.width * 0.12), -camera.y + (canvas.height * 0.12));
 
     drawField(); 
     drawPlayers(); 
