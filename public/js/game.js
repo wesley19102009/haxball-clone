@@ -27,7 +27,8 @@ const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const btnSendChat = document.getElementById('btn-send-chat');
 
-const socket = io();
+// Força a conexão automática na URL certa do servidor online
+const socket = io(window.location.origin);
 let clientPlayers = {};
 let clientBall = { x: 400, y: 250, radius: 10 };
 let goalOverlayActive = false;
@@ -150,7 +151,6 @@ socket.on('goalScored', () => {
 
 socket.on('matchEnded', (winner) => {
     overlayText = winner === 'draw' ? "FIM DE JOGO: EMPATE!" : `FIM DE JOGO: TIME ${winner.toUpperCase()} VENCEU!`;
-    // Opcional: Após alguns segundos do fim, poderia voltar ao lobby.
 });
 
 function setupInputListeners() {
@@ -186,7 +186,12 @@ function drawField() {
     
     ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#000000"; ctx.lineWidth = 2;
     const posts = [{x: FIELD_MARGIN, y: GOAL_TOP}, {x: FIELD_MARGIN, y: GOAL_BOTTOM}, {x: canvas.width - FIELD_MARGIN, y: GOAL_TOP}, {x: canvas.width - FIELD_MARGIN, y: GOAL_BOTTOM}];
-    posts.forEach(post => { ctx.beginPath(); ctx.arc(post.x, post.y, 6, 0, Math.PI * 2); ctx.fill(); stroke(); });
+    posts.forEach(post => { 
+        ctx.beginPath(); 
+        ctx.arc(post.x, post.y, 6, 0, Math.PI * 2); 
+        ctx.fill(); 
+        ctx.stroke(); // Correção definitiva aplicada aqui
+    });
 }
 
 function drawPlayers() {
@@ -214,20 +219,21 @@ function drawOverlays() {
     }
     if (gameOverOverlay) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ff3333";
-        ctx.font = "bold 40px Arial";
-        ctx.textAlign = "center";
+        ctx.fillStyle = "#ff3333"; 
+        ctx.font = "bold 40px Arial"; 
+        ctx.textAlign = "center"; 
         ctx.textBaseline = "middle";
         ctx.fillText(overlayText, canvas.width / 2, canvas.height / 2);
     }
 }
 
 function gameLoop() {
-    drawField();
-    drawPlayers();
-    drawBall();
+    drawField(); 
+    drawPlayers(); 
+    drawBall(); 
     drawOverlays();
     requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
+
