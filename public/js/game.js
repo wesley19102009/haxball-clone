@@ -169,6 +169,9 @@ function setupInputListeners() {
 }
 
 // --- FUNÇÃO DE DESENHO DO CAMPO CORRIGIDA E COMPLETA ---
+// ... (toda a parte de cima do seu game.js continua igual)
+
+// --- FUNÇÃO DE DESENHO DO CAMPO COMPLETA E FECHADA CORRETAMENTE ---
 function drawField() {
     // Fundo do gramado
     ctx.fillStyle = "#1e722c";
@@ -191,7 +194,7 @@ function drawField() {
     ctx.strokeStyle = "#4da6ff";
     ctx.strokeRect(WORLD_WIDTH - FIELD_MARGIN, GOAL_TOP, GOAL_WIDTH, GOAL_BOTTOM - GOAL_TOP);
     
-    // Postes/Traves físicas (Círculos pretos/brancos nas pontas do gol)
+    // Postes/Traves físicas
     ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#000000"; ctx.lineWidth = 2;
     const posts = [
         {x: FIELD_MARGIN, y: GOAL_TOP}, {x: FIELD_MARGIN, y: GOAL_BOTTOM},
@@ -206,11 +209,10 @@ function drawField() {
         let p = clientPlayers[id];
         ctx.fillStyle = p.team === 'red' ? '#ff3333' : '#3333ff';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 20, 0, Math.PI * 2); // Assumindo raio do player como 20
+        ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Nome do jogador acima da cabeça
         ctx.fillStyle = "#ffffff";
         ctx.font = "14px sans-serif";
         ctx.textAlign = "center";
@@ -229,8 +231,6 @@ function drawField() {
 
     // Overlays (Mensagens sobrepostas fora do espaço do mundo)
     if (goalOverlayActive) {
-        // Overlays (Mensagens sobrepostas fora do espaço do mundo)
-    if (goalOverlayActive) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffcc00";
@@ -247,7 +247,7 @@ function drawField() {
         ctx.textAlign = "center";
         ctx.fillText(overlayText, canvas.width / 2, canvas.height / 2);
     }
-}
+} // <-- ESSA CHAVE FECHA A FUNÇÃO DRAWFIELD
 
 // Loop Principal do Jogo
 function gameLoop() {
@@ -255,3 +255,4 @@ function gameLoop() {
     drawField();
     requestAnimationFrame(gameLoop);
 }
+
