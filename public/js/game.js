@@ -46,8 +46,23 @@ let camera = { x: 0, y: 0 };
 
 const inputState = { up: false, down: false, left: false, right: false, kick: false };
 
-tabCreate.addEventListener('click', () => { currentMode = 'create'; tabCreate.classList.add('active'); tabJoin.classList.remove('active'); panelCreate.classList.remove('hidden'); panelJoin.classList.add('hidden'); });
-tabJoin.addEventListener('click', () => { currentMode = 'join'; tabJoin.classList.add('active'); tabCreate.classList.remove('active'); panelJoin.classList.remove('hidden'); panelJoin.classList.add('hidden'); });
+// --- CORREÇÃO DAS ABAS ---
+tabCreate.addEventListener('click', () => { 
+    currentMode = 'create'; 
+    tabCreate.classList.add('active'); 
+    tabJoin.classList.remove('active'); 
+    panelCreate.classList.remove('hidden'); 
+    panelJoin.classList.add('hidden'); 
+});
+
+tabJoin.addEventListener('click', () => { 
+    currentMode = 'join'; 
+    tabJoin.classList.add('active'); 
+    tabCreate.classList.remove('active'); 
+    panelJoin.classList.remove('hidden'); 
+    panelCreate.classList.add('hidden'); // Corrigido aqui para ocultar o painel de criação
+});
+
 btnRed.addEventListener('click', () => { selectedTeam = 'red'; btnRed.classList.add('active'); btnBlue.classList.remove('active'); });
 btnBlue.addEventListener('click', () => { selectedTeam = 'blue'; btnBlue.classList.add('active'); btnRed.classList.remove('active'); });
 
@@ -88,7 +103,12 @@ socket.on('lobbyUpdate', (data) => {
 });
 
 btnStartMatch.addEventListener('click', () => { socket.emit('startMatchSignal'); });
-socket.on('matchStarted', () => { lobbyContainer.classList.add('hidden'); gameContainer.classList.remove('hidden'); setupInputListeners(); });
+socket.on('matchStarted', () => { 
+    lobbyContainer.classList.add('hidden'); 
+    gameContainer.classList.remove('hidden'); 
+    setupInputListeners(); 
+    requestAnimationFrame(gameLoop); // Inicia o loop de renderização do jogo
+});
 
 socket.on('gameState', (data) => {
     clientPlayers = data.players;
@@ -148,78 +168,90 @@ function setupInputListeners() {
     });
 }
 
+// --- FUNÇÃO DE DESENHO DO CAMPO CORRIGIDA E COMPLETA ---
 function drawField() {
+    // Fundo do gramado
+    ctx.fillStyle = "#1e722c";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    // Aplica o deslocamento da câmera
+    ctx.translate(-camera.x, -camera.y);
+
+    // Linhas do campo
     ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; ctx.lineWidth = 4;
     ctx.strokeRect(FIELD_MARGIN, 0, WORLD_WIDTH - (FIELD_MARGIN * 2), WORLD_HEIGHT);
 
     ctx.beginPath(); ctx.moveTo(WORLD_WIDTH / 2, 0); ctx.lineTo(WORLD_WIDTH / 2, WORLD_HEIGHT); ctx.stroke();
     ctx.beginPath(); ctx.arc(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 120, 0, Math.PI * 2); ctx.stroke();
     
+    // Áreas/Traves
     ctx.lineWidth = 3; ctx.strokeStyle = "#ff4d4d";
     ctx.strokeRect(FIELD_MARGIN - GOAL_WIDTH, GOAL_TOP, GOAL_WIDTH, GOAL_BOTTOM - GOAL_TOP);
     ctx.strokeStyle = "#4da6ff";
     ctx.strokeRect(WORLD_WIDTH - FIELD_MARGIN, GOAL_TOP, GOAL_WIDTH, GOAL_BOTTOM - GOAL_TOP);
     
+    // Postes/Traves físicas (Círculos pretos/brancos nas pontas do gol)
     ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#000000"; ctx.lineWidth = 2;
-    const posts = [{x: FIELD_MARGIN, y: GOAL_TOP}, {x: FIELD_MARGIN, y: GOAL_BOTTOM}, {x: WORLD_WIDTH - FIELD_MARGIN, y: GOAL_TOP}, {x: WORLD_WIDTH - FIELD_MARGIN, y: GOAL_BOTTOM}];
-    posts.forEach(post => { ctx.beginPath(); ctx.arc(post.x, post.y, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
-}
+    const posts = [
+        {x: FIELD_MARGIN, y: GOAL_TOP}, {x: FIELD_MARGIN, y: GOAL_BOTTOM},
+        {x: WORLD_WIDTH - FIELD_MARGIN, y: GOAL_TOP}, {x: WORLD_WIDTH - FIELD_MARGIN, y: GOAL_BOTTOM}
+    ];
+    posts.forEach(post => {
+        ctx.beginPath(); ctx.arc(post.x, post.y, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
 
-function drawPlayers() {
+    // Desenhar Jogadores
     for (let id in clientPlayers) {
-        let p = clientPlayers[id]; if (!p.name) continue;
-        ctx.strokeStyle = p.input && p.input.kick ? '#ffea00' : '#ffffff';
-        ctx.lineWidth = p.input && p.input.kick ? 4 : 2; ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "#ffffff"; ctx.font = "bold 13px Arial"; ctx.textAlign = "center";
-        ctx.strokeStyle = "#000000"; ctx.lineWidth = 3;
-        ctx.strokeText(p.name, p.x, p.y - p.radius - 6); ctx.fillText(p.name, p.x, p.y - p.radius - 6);
+        let p = clientPlayers[id];
+        ctx.fillStyle = p.team === 'red' ? '#ff3333' : '#3333ff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 20, 0, Math.PI * 2); // Assumindo raio do player como 20
+        ctx.fill();
+        ctx.stroke();
+
+        // Nome do jogador acima da cabeça
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(p.name, p.x, p.y - 25);
     }
-}
 
-function drawBall() {
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(clientBall.x, clientBall.y, clientBall.radius, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#000000'; ctx.stroke();
-}
-
-function drawStaticOverlays() {
-    if (goalOverlayActive && !gameOverOverlay) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ffea00"; ctx.font = "bold 60px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText("¡¡¡ GOOOL !!!", canvas.width / 2, canvas.height / 2);
-    }
-    if (gameOverOverlay) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ff3333"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        if (gameOverOverlay) {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ff3333"; 
-            ctx.font = "bold 40px Arial"; 
-            ctx.textAlign = "center"; 
-            ctx.textBaseline = "middle";
-            ctx.fillText(overlayText, canvas.width / 2, canvas.height / 2);
-        }
-    }
-}
-
-function gameLoop() {
-    ctx.fillStyle = "#4b8b3b";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    
-    // CORREÇÃO: Aplica zoom out de 0.75 para dar mais visão e afastar a câmera
-    ctx.scale(0.75, 0.75);
-    ctx.translate(-camera.x + (canvas.width * 0.12), -camera.y + (canvas.height * 0.12));
-
-    drawField(); 
-    drawPlayers(); 
-    drawBall();
+    // Desenhar a Bola
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    ctx.arc(clientBall.x, clientBall.y, clientBall.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
 
     ctx.restore();
 
-    drawStaticOverlays();
-    requestAnimationFrame(gameLoop);
+    // Overlays (Mensagens sobrepostas fora do espaço do mundo)
+    if (goalOverlayActive) {
+        // Overlays (Mensagens sobrepostas fora do espaço do mundo)
+    if (goalOverlayActive) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffcc00";
+        ctx.font = "bold 48px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("GOL !!!", canvas.width / 2, canvas.height / 2);
+    }
+
+    if (gameOverOverlay) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 36px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(overlayText, canvas.width / 2, canvas.height / 2);
+    }
 }
 
-gameLoop();
+// Loop Principal do Jogo
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawField();
+    requestAnimationFrame(gameLoop);
+}
