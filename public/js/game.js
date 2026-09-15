@@ -42,11 +42,14 @@ const GOAL_WIDTH = 60;
 const GOAL_TOP = WORLD_HEIGHT / 2 - 150; 
 const GOAL_BOTTOM = WORLD_HEIGHT / 2 + 150;
 
+// --- CONFIGURAÇÃO DO ZOOM (CÂMERA MAIS AFASTADA) ---
+// 0.6 significa que o campo vai parecer 40% mais afastado (visão muito mais ampla)
+const CAMERA_ZOOM = 0.6; 
+
 let camera = { x: 0, y: 0 };
 
 const inputState = { up: false, down: false, left: false, right: false, kick: false };
 
-// --- CORREÇÃO DAS ABAS ---
 tabCreate.addEventListener('click', () => { 
     currentMode = 'create'; 
     tabCreate.classList.add('active'); 
@@ -60,7 +63,7 @@ tabJoin.addEventListener('click', () => {
     tabJoin.classList.add('active'); 
     tabCreate.classList.remove('active'); 
     panelJoin.classList.remove('hidden'); 
-    panelCreate.classList.add('hidden'); // Corrigido aqui para ocultar o painel de criação
+    panelCreate.classList.add('hidden'); 
 });
 
 btnRed.addEventListener('click', () => { selectedTeam = 'red'; btnRed.classList.add('active'); btnBlue.classList.remove('active'); });
@@ -107,7 +110,7 @@ socket.on('matchStarted', () => {
     lobbyContainer.classList.add('hidden'); 
     gameContainer.classList.remove('hidden'); 
     setupInputListeners(); 
-    requestAnimationFrame(gameLoop); // Inicia o loop de renderização do jogo
+    requestAnimationFrame(gameLoop); 
 });
 
 socket.on('gameState', (data) => {
@@ -118,18 +121,21 @@ socket.on('gameState', (data) => {
     if (data.timeString) timerDisplay.innerHTML = `⏱️ ${data.timeString}`;
     
     let myPlayer = clientPlayers[socket.id];
+    
+    // Ajuste no cálculo do centro da câmera considerando o ZOOM
     if (myPlayer) {
-        camera.x = myPlayer.x - canvas.width / 2;
-        camera.y = myPlayer.y - canvas.height / 2;
+        camera.x = myPlayer.x - (canvas.width / 2) / CAMERA_ZOOM;
+        camera.y = myPlayer.y - (canvas.height / 2) / CAMERA_ZOOM;
     } else {
-        camera.x = clientBall.x - canvas.width / 2;
-        camera.y = clientBall.y - canvas.height / 2;
+        camera.x = clientBall.x - (canvas.width / 2) / CAMERA_ZOOM;
+        camera.y = clientBall.y - (canvas.height / 2) / CAMERA_ZOOM;
     }
 
+    // Limites da câmera com o zoom aplicado
     if (camera.x < 0) camera.x = 0;
     if (camera.y < 0) camera.y = 0;
-    if (camera.x > WORLD_WIDTH - canvas.width) camera.x = WORLD_WIDTH - canvas.width;
-    if (camera.y > WORLD_HEIGHT - canvas.height) camera.y = WORLD_HEIGHT - canvas.height;
+    if (camera.x > WORLD_WIDTH - canvas.width / CAMERA_ZOOM) camera.x = WORLD_WIDTH - canvas.width / CAMERA_ZOOM;
+    if (camera.y > WORLD_HEIGHT - canvas.height / CAMERA_ZOOM) camera.y = WORLD_HEIGHT - canvas.height / CAMERA_ZOOM;
 });
 
 function sendChatMessage() {
@@ -168,17 +174,15 @@ function setupInputListeners() {
     });
 }
 
-// --- FUNÇÃO DE DESENHO DO CAMPO CORRIGIDA E COMPLETA ---
-// ... (toda a parte de cima do seu game.js continua igual)
-
-// --- FUNÇÃO DE DESENHO DO CAMPO COMPLETA E FECHADA CORRETAMENTE ---
 function drawField() {
     // Fundo do gramado
     ctx.fillStyle = "#1e722c";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    // Aplica o deslocamento da câmera
+    
+    // --- APLICA O ZOOM E O DESLOCAMENTO AFASTADO ---
+    ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
     ctx.translate(-camera.x, -camera.y);
 
     // Linhas do campo
@@ -209,10 +213,11 @@ function drawField() {
         let p = clientPlayers[id];
         ctx.fillStyle = p.team === 'red' ? '#ff3333' : '#3333ff';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 20, 0, Math.PI * 2); 
         ctx.fill();
         ctx.stroke();
 
+        // Nome do jogador
         ctx.fillStyle = "#ffffff";
         ctx.font = "14px sans-serif";
         ctx.textAlign = "center";
@@ -223,13 +228,13 @@ function drawField() {
     ctx.fillStyle = "#ffffff";
     ctx.strokeStyle = "#000000";
     ctx.beginPath();
-    ctx.arc(clientBall.x, clientBall.y, clientBall.radius, 0, Math.PI * 2);
+        ctx.arc(clientBall.x, clientBall.y, clientBall.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
     ctx.restore();
 
-    // Overlays (Mensagens sobrepostas fora do espaço do mundo)
+    // Overlays fixos na tela (Não sofrem influência do zoom)
     if (goalOverlayActive) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -247,7 +252,7 @@ function drawField() {
         ctx.textAlign = "center";
         ctx.fillText(overlayText, canvas.width / 2, canvas.height / 2);
     }
-} // <-- ESSA CHAVE FECHA A FUNÇÃO DRAWFIELD
+}
 
 // Loop Principal do Jogo
 function gameLoop() {
@@ -255,4 +260,3 @@ function gameLoop() {
     drawField();
     requestAnimationFrame(gameLoop);
 }
-
